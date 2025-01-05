@@ -14,11 +14,8 @@ router.get('/auth/connect', async (req, res) => {
 router.get('/callback', async (req, res) => {
     try {
         const { code } = req.query;
+        const tokenResponse = await login(req, res); 
 
-        // Assuming the login function handles the response by itself
-        const tokenResponse = await login(req, res); // Make sure login doesn't send a response itself
-
-        // If login function does not send a response, you can send it here
         if (!res.headersSent) {
             res.json({
                 success: true,
@@ -28,7 +25,7 @@ router.get('/callback', async (req, res) => {
         }
 
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to log in' });
+        res.status(500).json({ success: false, message: error });
     }
 });
 

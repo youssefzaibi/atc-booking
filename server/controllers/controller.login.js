@@ -1,6 +1,21 @@
 const axios = require('axios');
 const { getOAuthToken, getPilotSummary } = require('../config/api');
 
+const getUserData = async (access_token) => {
+    try {
+        const response = await axios.get('https://api.ivao.aero/v2/users/me', {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        });
+
+        return response.data; 
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        throw error;
+    }
+};
+
 const getAuthorizationUrl = async () => {
     try {
         const openIdConfig = await axios.get('https://api.ivao.aero/.well-known/openid-configuration').then(res => res.data);
@@ -14,18 +29,24 @@ const getAuthorizationUrl = async () => {
     }
 };
 
+
 const login = async (req, res) => {
-    const { code } = req.query; 
+    const { code } = req.query;
     try {
         const token = await getOAuthToken(code);
+
         const pilotSummary = await getPilotSummary(token.access_token);
-        return {
+        const userData = await getUserData(token.access_token);  
+
+        return res.json({
+            success: true,
             token: token,
-            pilotSummary: pilotSummary
-        };
+            pilotSummary: pilotSummary,
+            userData: userData, 
+        });
     } catch (error) {
-        console.error('Error during login or fetching pilot data:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch pilot data' });
+        console.error( error);
+        res.status(500).json({ success: false });
     }
 };
 

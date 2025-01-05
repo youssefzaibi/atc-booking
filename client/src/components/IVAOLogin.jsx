@@ -5,6 +5,7 @@ const IVAOLogin = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pilotData, setPilotData] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [token, setToken] = useState(null);
 
   const API_BASE_URL = 'http://localhost:3300';
@@ -26,7 +27,7 @@ const IVAOLogin = ({ onLoginSuccess }) => {
       const response = await axios.get(`${API_BASE_URL}/api/auth/connect`);
       window.location.href = response.data;
     } catch (err) {
-      setError('Failed to initialize login. Please try again.');
+      setError(err);
       setIsLoading(false);
     }
   };
@@ -37,18 +38,27 @@ const IVAOLogin = ({ onLoginSuccess }) => {
     
     try {
       const response = await axios.get(`${API_BASE_URL}/api/callback?code=${code}`);
-      setToken(response.data.token);
-      setPilotData(response.data.pilotSummary);
-      localStorage.setItem('ivaoToken', response.data.token.access_token);
+
+      const { token, pilotSummary, userData } = response.data;
+      
+      setToken(token);
+      setPilotData(pilotSummary);
+      setUserData(userData); 
+      
+      localStorage.setItem('ivaoToken', token.access_token);
+      localStorage.setItem('ivaoPilotData', JSON.stringify(pilotSummary));
+      localStorage.setItem('ivaoUserData', JSON.stringify(userData));
+      
       window.history.replaceState({}, document.title, window.location.pathname);
+      
       onLoginSuccess();
     } catch (err) {
-      setError('Failed to complete authentication. Please try again.');
+      setError(err);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
       <div style={{ 
@@ -119,6 +129,21 @@ const IVAOLogin = ({ onLoginSuccess }) => {
               }}>
                 {JSON.stringify(pilotData, null, 2)}
               </pre>
+            </div>
+
+            <div style={{ 
+              border: '1px solid #e0e0e0', 
+              borderRadius: '8px', 
+              padding: '16px',
+              marginTop: '20px'
+            }}>
+              <h3 style={{ fontWeight: '500', marginBottom: '8px' }}>
+                User Data
+              </h3>
+              <p style={{ color: '#4b5563', fontSize: '14px' }}>
+                Division: {userData ? userData.division : 'N/A'}<br />
+                GCA Status: {userData ? (userData.gca_status ? 'Yes' : 'No') : 'N/A'}
+              </p>
             </div>
           </div>
         ) : (
